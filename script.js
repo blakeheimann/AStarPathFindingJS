@@ -99,10 +99,10 @@ function getNeighbors(node) {
 
     return neighbors;
 }
-
+let runningAlgorithm = false;
 async function startPathFinding() {
     console.log("StartingPathFinding");
-
+    runningAlgorithm = true;
     clearPath(); // Add this line to clear the previous path
 
     const startNode = grid.querySelector('.square[data-type="start"]');
@@ -118,8 +118,6 @@ async function startPathFinding() {
             }
             await sleep(10);
         }
-    } else {
-        alert("No path found!");
     }
 }
 
@@ -133,12 +131,13 @@ async function aStarAlgorithm(startNode, endNode) {
     startNode.dataset.hCost = euclideanDistance(startNode, endNode);
     startNode.dataset.fCost = startNode.dataset.hCost;
 
-    while (openSet.length > 0) {
+    while (openSet.length > 0 && runningAlgorithm) {
         openSet.sort((a, b) => parseFloat(a.dataset.fCost) - parseFloat(b.dataset.fCost));
         const currentNode = openSet.shift();
 
         if (currentNode === endNode) {
             console.log("Path found!")
+            runningAlgorithm = false;
             return reconstructPath(cameFrom, currentNode);
         }
 
@@ -186,12 +185,15 @@ function reconstructPath(cameFrom, currentNode) {
     return path;
 }
 
-let draggingStartOrEnd = false;
+// let draggingStartOrEnd = false;
 let placingObstacles = false;
 let removingObstacles = false;
-let mouseMoving = false;
+let mouseClicked = false;
+let placingStart = false;
+let placingEnd = false;
 
 function handleMouseDown(event) {
+    mouseClicked = true;
     const square = event.target;
     if(!square){
         const squareSize = 25; // Replace this with the actual size of your squares (including borders)
@@ -206,67 +208,131 @@ function handleMouseDown(event) {
     }
     const type = square.dataset.type;
 
-    if (type === "start" || type === "end") {
-        draggingStartOrEnd = true;
-        grid.dataset.dragging = type;
-        grid.dataset.draggingOriginalRow = square.dataset.row;
-        grid.dataset.draggingOriginalCol = square.dataset.col;
-    } else {
-        if (type === "blank" || type === "path" || type === "open" || type === "closed") {
-            placingObstacles = true;
-            setObstacle(square);
-        } else if (type === "obstacle") {
-            removingObstacles = true;
-            setBlank(square);
-        }
+    if (type === "start"){
+        placingEnd = false;
+        placingObstacles = false;
+        removingObstacles = false;
+        runningAlgorithm = false;
+        placingStart = true;
+    }else if(type === "end") {
+        placingObstacles = false;
+        removingObstacles = false;
+        runningAlgorithm = false;
+        placingStart = false;
+        placingEnd = true;
+        // draggingStartOrEnd = true;
+        // grid.dataset.dragging = type;
+        // grid.dataset.draggingOriginalRow = square.dataset.row;
+        // grid.dataset.draggingOriginalCol = square.dataset.col;
+    } else if(type == "obstacle"){
+        placingObstacles = false;
+        removingObstacles = true;
+        runningAlgorithm = false;
+        placingStart = false;
+        placingEnd = false;
+        setBlank(square);
+    }else{
+        placingObstacles = true;
+        removingObstacles = false;
+        runningAlgorithm = false;
+        placingStart = false;
+        placingEnd = false;
+        setObstacle(square);
     }
-}
+        // if (type === "blank" || type === "path" || type === "open" || type === "closed") {
+        //     placingObstacles = true;
+        //     setObstacle(square);
+        // } else if (type === "obstacle") {
+        //     removingObstacles = true;
+        //     setBlank(square);
+        // }
+    }
 
-async function handleStartOrEndMove(square) {
+async function handleStartMove(square) {
     const type = square.dataset.type;
 
     if (type !== "obstacle" && type !== "start" && type !== "end") {
         const previousStartOrEndSquare = grid.querySelector(
-            `.square[data-type="${grid.dataset.dragging}"]`
+            `.square[data-type="start"]`
+        );
+        previousStartOrEndSquare.classList.remove("start");
+        // previousStartOrEndSquare.classList.remove(grid.dataset.dragging);
+        previousStartOrEndSquare.dataset.type = "blank";
+        // square.clasList.add("start");
+        square.dataset.type = "start";
+        square.classList.add("start");
+    }
+}
+
+async function handleEndMove(square) {
+    const type = square.dataset.type;
+
+    if (type !== "obstacle" && type !== "start" && type !== "end") {
+        const previousStartOrEndSquare = grid.querySelector(
+            `.square[data-type="end"]`
         );
 
-        previousStartOrEndSquare.classList.remove(grid.dataset.dragging);
+        previousStartOrEndSquare.classList.remove("end");
+        // previousStartOrEndSquare.classList.remove(grid.dataset.dragging);
         previousStartOrEndSquare.dataset.type = "blank";
-
-        square.classList.add(grid.dataset.dragging);
-        square.dataset.type = grid.dataset.dragging;
+        // square.classList.add("end");
+        square.dataset.type = "end";
+        square.classList.add("end");
     }
 }
 
 async function handleMouseUp(event) {
-    if (draggingStartOrEnd) {
-        await handleStartOrEndMove(event.target);
-    }
+    mouseClicked = false;
+    // if (draggingStartOrEnd) {
+    //     await handleStartOrEndMove(event.target);
+    // }
 
-    draggingStartOrEnd = false;
+    // draggingStartOrEnd = false;
     placingObstacles = false;
     removingObstacles = false;
+    runningAlgorithm = false;
+    placingStart = false;
+    placingEnd = false;
 }
 
 
 async function handleMouseMove(event) {
-    if (mouseMoving) return;
-    mouseMoving = true;
+    if (mouseClicked){
 
     const square = event.target;
+    if(!square){
+        const squareSize = 25; // Replace this with the actual size of your squares (including borders)
+        const gridRect = grid.getBoundingClientRect();
+        const offsetX = event.clientX - gridRect.left;
+        const offsetY = event.clientY - gridRect.top;
+
+        const row = Math.floor(offsetY / squareSize);
+        const col = Math.floor(offsetX / squareSize);
+
+        square = getNode(row, col);
+    }
     const type = square.dataset.type;
 
-    if (draggingStartOrEnd) {
-        await handleStartOrEndMove(square);
-    } else {
-        if (placingObstacles && type === "blank") {
-            setObstacle(square);
-        } else if (removingObstacles && type === "obstacle") {
-            setBlank(square);
-        }
+    if(placingStart){
+        handleStartMove(square);
+    }else if(placingEnd){
+        handleEndMove(square);
+    }else if(removingObstacles){
+        setBlank(square);
+    }else{
+        setObstacle(square);
     }
+    // if (draggingStartOrEnd) {
+    //     await handleStartOrEndMove(square);
+    // } else {
+    //     if (placingObstacles && type === "blank") {
+    //         setObstacle(square);
+    //     } else if (removingObstacles && type === "obstacle") {
+    //         setBlank(square);
+    //     }
+    // }
 
-    mouseMoving = false;
+}
 }
 
 // Event Listeners
