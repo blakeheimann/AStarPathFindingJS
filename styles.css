@@ -1,0 +1,38 @@
+/* Set the size of the squares */
+td {
+    width: 20px;
+    height: 20px;
+  }
+  
+  /* Add borders to the squares */
+  td {
+    border: 0.5px solid #ccc;
+  }
+  
+  /* Style the start and end nodes */
+  #start {
+    background-color: green;
+  }
+  
+  #end {
+    background-color: red;
+  }
+  
+  /* Style the obstacles */
+  .obstacle {
+    background-color: black;
+  }
+  
+  /* Style the path */
+  .path {
+    background-color: yellow;
+  }
+
+  .closed-set {
+    background-color: lightblue;
+  }
+
+  .open-set {
+    background-color: lightgreen;
+  }
+  
