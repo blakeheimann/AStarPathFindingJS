@@ -1,6 +1,9 @@
 // Variables
 const grid = document.getElementById("grid");
 const clearBtn = document.getElementById("clear");
+const addRandomObstaclesBtn = document.getElementById("addRandomObstacles");
+const numObstaclesSlider = document.getElementById("numObstacles");
+const numObstaclesValue = document.getElementById("numObstaclesValue");
 const startPathfindingBtn = document.getElementById("startPathfinding");
 
 // Functions
@@ -65,6 +68,7 @@ function clearPath() {
 
 
 function clearGrid() {
+    runningAlgorithm = false;
     console.log("Clearing grid");
 
     const startNode = grid.querySelector('.square[data-type="start"]');
@@ -185,6 +189,26 @@ function reconstructPath(cameFrom, currentNode) {
     return path;
 }
 
+function addRandomObstacles(numObstacles) {
+    runningAlgorithm = false;
+    const numberOfRows = 20;
+    const numberOfColumns = 20;
+  
+    for (let i = 0; i < numObstacles; i++) {
+      let row, col, square, type;
+  
+      do {
+        row = Math.floor(Math.random() * numberOfRows);
+        col = Math.floor(Math.random() * numberOfColumns);
+        square = getNode(row, col);
+        type = square.dataset.type;
+      } while (type !== "blank");
+  
+      setObstacle(square);
+    }
+  }
+  
+
 // let draggingStartOrEnd = false;
 let placingObstacles = false;
 let removingObstacles = false;
@@ -220,10 +244,6 @@ function handleMouseDown(event) {
         runningAlgorithm = false;
         placingStart = false;
         placingEnd = true;
-        // draggingStartOrEnd = true;
-        // grid.dataset.dragging = type;
-        // grid.dataset.draggingOriginalRow = square.dataset.row;
-        // grid.dataset.draggingOriginalCol = square.dataset.col;
     } else if(type == "obstacle"){
         placingObstacles = false;
         removingObstacles = true;
@@ -239,13 +259,6 @@ function handleMouseDown(event) {
         placingEnd = false;
         setObstacle(square);
     }
-        // if (type === "blank" || type === "path" || type === "open" || type === "closed") {
-        //     placingObstacles = true;
-        //     setObstacle(square);
-        // } else if (type === "obstacle") {
-        //     removingObstacles = true;
-        //     setBlank(square);
-        // }
     }
 
 async function handleStartMove(square) {
@@ -256,9 +269,7 @@ async function handleStartMove(square) {
             `.square[data-type="start"]`
         );
         previousStartOrEndSquare.classList.remove("start");
-        // previousStartOrEndSquare.classList.remove(grid.dataset.dragging);
         previousStartOrEndSquare.dataset.type = "blank";
-        // square.clasList.add("start");
         square.dataset.type = "start";
         square.classList.add("start");
     }
@@ -273,9 +284,7 @@ async function handleEndMove(square) {
         );
 
         previousStartOrEndSquare.classList.remove("end");
-        // previousStartOrEndSquare.classList.remove(grid.dataset.dragging);
         previousStartOrEndSquare.dataset.type = "blank";
-        // square.classList.add("end");
         square.dataset.type = "end";
         square.classList.add("end");
     }
@@ -283,11 +292,6 @@ async function handleEndMove(square) {
 
 async function handleMouseUp(event) {
     mouseClicked = false;
-    // if (draggingStartOrEnd) {
-    //     await handleStartOrEndMove(event.target);
-    // }
-
-    // draggingStartOrEnd = false;
     placingObstacles = false;
     removingObstacles = false;
     runningAlgorithm = false;
@@ -322,16 +326,6 @@ async function handleMouseMove(event) {
     }else{
         setObstacle(square);
     }
-    // if (draggingStartOrEnd) {
-    //     await handleStartOrEndMove(square);
-    // } else {
-    //     if (placingObstacles && type === "blank") {
-    //         setObstacle(square);
-    //     } else if (removingObstacles && type === "obstacle") {
-    //         setBlank(square);
-    //     }
-    // }
-
 }
 }
 
@@ -341,6 +335,13 @@ grid.addEventListener("mouseup", handleMouseUp);
 grid.addEventListener("mousemove", handleMouseMove);
 clearBtn.addEventListener("click", clearGrid);
 startPathfindingBtn.addEventListener("click", startPathFinding);
+addRandomObstaclesBtn.addEventListener("click", () => {
+    addRandomObstacles(numObstaclesSlider.value);
+  });
+  
+  numObstaclesSlider.addEventListener("input", (event) => {
+    numObstaclesValue.textContent = event.target.value;
+  });
 
 // Initialization
 generateGrid();
